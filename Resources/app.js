@@ -1,4 +1,4 @@
-var tab, tabGroup, webView, window, _fakeRequest, _responseToWebView;
+var tab, tabGroup, webView, window, _dispatch, _fakeServerRequest, _responseToWebView;
 Ti.UI.setBackgroundColor('#fff');
 tabGroup = Ti.UI.createTabGroup();
 window = Ti.UI.createWindow({
@@ -14,39 +14,36 @@ tab = Ti.UI.createTab({
   title: 'Tab 1',
   window: window
 });
-tabGroup.tabs = [tab];
+tabGroup.addTab(tab);
+_dispatch = function(e) {
+  if (e.fakeUrl === 'ti/hello') {
+    _fakeServerRequest(e.params);
+  } else if (e.fakeUrl === 'ti/goodbye') {
+    _fakeServerRequest(e.params);
+  }
+};
 _responseToWebView = function(data) {
   Ti.App.fireEvent('response', {
     status: data.status,
-    responseData: data.responseData
+    message: data.message
   });
 };
-_fakeRequest = function(params) {
+_fakeServerRequest = function(params) {
   var res;
   if (Math.round(Math.random())) {
     res = {
       status: 'success',
-      responseData: {
-        message: params.message + ' Titanium'
-      }
+      message: params.message + ' Titanium'
     };
   } else {
     res = {
       status: 'failure',
-      responseData: {
-        message: 'Something Wrong'
-      }
+      message: 'Something Wrong'
     };
   }
   setTimeout(function() {
     return _responseToWebView(res);
   }, 3000);
 };
-Ti.App.addEventListener('dispatch', function(e) {
-  if (e.fakeUrl === 'ti/hello') {
-    _fakeRequest(e.params);
-  } else if (e.fakeUrl === 'ti/goodbye') {
-    _fakeRequest(e.params);
-  }
-});
+Ti.App.addEventListener('dispatch', _dispatch);
 tabGroup.open();

@@ -1,97 +1,95 @@
 #HTML側のJS
 ((win, doc) -> 
 
-  #他のリクエストが動作中の時は邪魔しない
+  #他のリクエストを処理中かどうか
   isConnected = false
+
 
   #TitaniumのJSにAjax風にリクエストする  
   _ajaxLikeRequest = (attr)->
-    #成功時
+
+    fakeUrl = attr.url || '' #Titanium側をサーバーに見立てて処理をURLで分岐させる
+    params = attr.params || {}
+
     success = attr.success || ()-> return
-    #エラー時
     error = attr.error || ()-> return
-    #後片付け 
     complete = attr.complete || ()-> return
 
     #Titanium側からレスポンスが帰ってきた時に呼び出されるコールバック
+    #setTimeoutでcallstackを断ち切らないとうまく動作してくれない。
     _callback = (data)->
-      #setTimeoutでcallstackを断ち切らないとうまく動作してくれない。
       setTimeout ()->
-        if data.status is 'success'
-          success data.responseData
-        else
-          error data.responseData
-
-        complete()
-
-        #用がすんだらさっさとイベントをunbind
+        #すぐにコールバックはunbind
         Ti.App.removeEventListener 'response', _callback
-
+        if data.status is 'success'
+          success data
+        else
+          error data
+        complete()
         isConnected = false
         return
-      , 0
+      ,0
       return
 
-    #_callbackをグローバルイベントにbind 
     Ti.App.addEventListener 'response', _callback
 
     #Titanium側のグローバルイベントを呼び出す 
-    Ti.App.fireEvent 'dispatch', {
-      fakeUrl: attr.url,
-      params: attr.params
-    }  
+    Ti.App.fireEvent 'dispatch', {fakeUrl: fakeUrl, params: params}  
     isConnected = true 
     return
 
-  _hello = (e)->
-    button = e.target
+
+  _helloBtnHandler = (e)->
     if isConnected  
       alert "I'm busy."
-    else
-      button.disabled =true
-      _ajaxLikeRequest
-        url: 'ti/hello',
-        params: {message: 'Hello'},
-        success: (data)->
-          alert data.message
-          return
-        ,
-        error: (error)->
-          alert error.message
-          return
-        ,
-        complete: ()->
-          button.disabled = false
-          return
+      return
+
+    button = e.target
+    button.disabled = true
+    _ajaxLikeRequest
+      url: 'ti/hello',
+      params: {message: 'Hello'},
+      success: (data)->
+        alert data.message
+        return
+      ,
+      error: (error)->
+        alert error.message
+        return
+      ,
+      complete: ()->
+        button.disabled = false
+        return
     return
 
-  _goodbye = (e)->
-    button = e.target
+  _goodbyeBtnHandler = (e)->
     if isConnected  
       alert "I'm busy."
-    else
-      button.disabled =true
-      _ajaxLikeRequest
-        url: 'ti/goodbye',
-        params: {message: 'Goodbye'},
-        success: (data)->
-          alert data.message
-          return
-        ,
-        error: (error)->
-          alert error.message
-          return
-        ,
-        complete: ()->
-          button.disabled = false
-          return
+      return
+
+    button = e.target
+    button.disabled = true
+    _ajaxLikeRequest
+      url: 'ti/goodbye',
+      params: {message: 'Goodbye'},
+      success: (data)->
+        alert data.message
+        return
+      ,
+      error: (error)->
+        alert error.message
+        return
+      ,
+      complete: ()->
+        button.disabled = false
+        return
     return
 
-  hellobtn = document.getElementById('hellobtn')
-  hellobtn.addEventListener('click', _hello, false)
+  hellobtn = document.getElementById('hello_btn')
+  hellobtn.addEventListener('click', _helloBtnHandler, false)
 
-  goodbyebtn = document.getElementById('goodbyebtn')
-  goodbyebtn.addEventListener('click', _goodbye, false)
+  goodbyebtn = document.getElementById('goodbye_btn')
+  goodbyebtn.addEventListener('click', _goodbyeBtnHandler, false)
 
   return
 )( window, document ) 
